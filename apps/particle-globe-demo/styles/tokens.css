@@ -1,0 +1,63 @@
+:root {
+  --vm-bg-void: #03040a;
+  --vm-bg-deep: #070914;
+  --vm-bg-panel: rgba(10, 14, 28, 0.58);
+  --vm-bg-panel-strong: rgba(12, 18, 36, 0.78);
+
+  --vm-text-primary: #f3f7ff;
+  --vm-text-secondary: rgba(220, 230, 255, 0.72);
+  --vm-text-muted: rgba(180, 194, 230, 0.46);
+
+  --vm-border-soft: rgba(216, 219, 227, 0.14);
+  --vm-border-active: rgba(216, 219, 227, 0.42);
+
+  --vm-user-color: #d8dbe3;
+  --vm-user-color-rgb: 216, 219, 227;
+  --vm-accent-blue: #a7adba;
+  --vm-accent-violet: #9b7cff;
+  --vm-accent-pink: #ff6fb1;
+  --vm-warning: #ffd166;
+
+  --vm-font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  --vm-font-mono: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+
+  --vm-text-xs: 11px;
+  --vm-text-sm: 13px;
+  --vm-text-md: 15px;
+  --vm-text-lg: 18px;
+  --vm-text-xl: 24px;
+  --vm-text-hero: clamp(40px, 7vw, 88px);
+
+  --vm-leading-tight: 1.05;
+  --vm-leading-normal: 1.5;
+  --vm-leading-loose: 1.75;
+
+  --vm-space-1: 4px;
+  --vm-space-2: 8px;
+  --vm-space-3: 12px;
+  --vm-space-4: 16px;
+  --vm-space-5: 24px;
+  --vm-space-6: 32px;
+  --vm-space-7: 48px;
+  --vm-space-8: 64px;
+
+  --vm-radius-sm: 10px;
+  --vm-radius-md: 16px;
+  --vm-radius-lg: 24px;
+  --vm-radius-pill: 999px;
+
+  --vm-blur-panel: 22px;
+  --vm-blur-bg: 80px;
+
+  --vm-glow-user: 0 0 28px rgba(var(--vm-user-color-rgb), 0.38);
+  --vm-glow-user-strong: 0 0 64px rgba(var(--vm-user-color-rgb), 0.52);
+  --vm-glow-blue: 0 0 44px rgba(216, 219, 227, 0.42);
+  --vm-shadow-panel: 0 24px 80px rgba(0, 0, 0, 0.42);
+
+  --vm-z-bg: 0;
+  --vm-z-globe: 10;
+  --vm-z-panels: 20;
+  --vm-z-nav: 30;
+  --vm-z-tooltip: 40;
+  --vm-z-modal: 50;
+}

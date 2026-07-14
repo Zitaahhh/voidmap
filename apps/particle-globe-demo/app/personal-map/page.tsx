@@ -1,17 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent } from "react";
 import { geoEquirectangular, geoPath } from "d3-geo";
 import { feature } from "topojson-client";
 import landTopology from "world-atlas/land-50m.json";
 import type { FeatureCollection, MultiPolygon, Polygon } from "geojson";
-import { explorerProfile, signals } from "@/data/signals";
+import { signals } from "@/data/signals";
+import { getCurrentUser, logoutUser, type VoidMapUser } from "@/lib/auth";
 
-const recentSignals = signals.slice(0, 3);
 const favoriteSignals = [signals[1], signals[3], signals[4]].filter(Boolean);
-const uniquePlaces = new Set(signals.map((signal) => `${signal.city} / ${signal.area}`)).size;
 
 const worldFeatureCollection = feature(
   landTopology as never,
@@ -23,7 +23,6 @@ const worldPath = geoPath(worldProjection);
 const MAP_VIEW_WIDTH = 1200;
 const MAP_VIEW_HEIGHT = 600;
 const WORLD_WIDTH_KM = 40075;
-const MAX_VISIBLE_CITY_LABELS = 10;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 400;
 
@@ -36,41 +35,54 @@ function projectSignal(signal: (typeof signals)[number]) {
 }
 
 export default function PersonalMapPage() {
+  const router = useRouter();
   const mapRef = useRef<HTMLDivElement>(null);
   const dragState = useRef<{ pointerId: number; x: number; y: number; offsetX: number; offsetY: number } | null>(null);
   const pinchState = useRef<{ distance: number; zoom: number } | null>(null);
   const activePointers = useRef(new Map<number, { x: number; y: number }>());
-  const [mapWidth, setMapWidth] = useState(0);
   const [mapOffset, setMapOffset] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [hoveredSignalId, setHoveredSignalId] = useState<string | null>(null);
   const [pinnedSignalId, setPinnedSignalId] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<VoidMapUser | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
 
   useEffect(() => {
-    const element = mapRef.current;
-    if (!element) return;
+    const handle = window.setTimeout(() => {
+      const user = getCurrentUser();
+      setCurrentUser(user);
+      setIsAuthReady(true);
+      if (!user) router.replace("/");
+    }, 0);
 
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (!entry) return;
-      setMapWidth(Math.round(entry.contentRect.width));
-    });
+    return () => window.clearTimeout(handle);
+  }, [router]);
 
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
+  const personalSignals = useMemo(() => {
+    if (!currentUser) return [];
+    const username = currentUser.username.toLowerCase();
+    return signals.filter(
+      (signal) => signal.authorId === currentUser.id || signal.authorName.toLowerCase() === username,
+    );
+  }, [currentUser]);
+  const recentSignals = useMemo(() => personalSignals.slice(0, 3), [personalSignals]);
+  const uniquePlaces = useMemo(
+    () => new Set(personalSignals.map((signal) => `${signal.city} / ${signal.area}`)).size,
+    [personalSignals],
+  );
+  const lastSignalAt = personalSignals[0]?.time ?? "silent";
 
   const activeSignal = signals.find((signal) => signal.id === (pinnedSignalId ?? hoveredSignalId)) ?? null;
   const mapScale = zoom;
   const mapTransform = `translate3d(${mapOffset.x}px, ${mapOffset.y}px, 0) scale(${mapScale})`;
   const visibleRangeKm = Math.max(100, Math.round(WORLD_WIDTH_KM / zoom));
 
-  const handleMapWheel = (deltaY: number) => {
+  const handleMapWheel = useCallback((deltaY: number) => {
     setZoom((currentZoom) => {
       const nextZoom = Number((currentZoom * Math.exp(-deltaY * 0.0028)).toFixed(2));
       return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, nextZoom));
     });
-  };
+  }, []);
 
   useEffect(() => {
     const element = mapRef.current;
@@ -228,6 +240,16 @@ export default function PersonalMapPage() {
       .filter((point): point is { signal: (typeof signals)[number]; left: number; top: number; isActive: boolean } => point !== null);
   }, [hoveredSignalId, pinnedSignalId]);
 
+  function handleLogout() {
+    logoutUser();
+    setCurrentUser(null);
+    router.replace("/");
+  }
+
+  if (!isAuthReady || !currentUser) {
+    return <main className="min-h-screen bg-[var(--vm-bg-void)]" />;
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden px-3 py-3 text-[var(--vm-text-primary)] sm:px-6 sm:py-6 lg:px-10">
       <div className="pointer-events-none absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:26px_26px]" />
@@ -248,21 +270,30 @@ export default function PersonalMapPage() {
                 MY MAP / PRIVATE TRACE
               </p>
               <h1 className="mt-2 text-2xl font-semibold tracking-[-0.06em] text-[#f7f7fa] sm:text-4xl">
-                个人地图
+                {currentUser.username} 的个人地图
               </h1>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 self-start border border-[#2b2b34] bg-[#09090c] px-3 py-2 sm:self-auto">
-            <div className="grid h-9 w-9 place-items-center border border-[#3a3a46] bg-[#0f0f13] font-mono text-[10px] uppercase tracking-[0.2em] text-[#d8dbe3]">
-              P
+          <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
+            <div className="flex items-center gap-3 border border-[#2b2b34] bg-[#09090c] px-3 py-2">
+              <div className="grid h-9 w-9 place-items-center border border-[#3a3a46] bg-[#0f0f13] font-mono text-[10px] uppercase tracking-[0.2em] text-[#d8dbe3]">
+                {currentUser.username.slice(0, 1).toUpperCase()}
+              </div>
+              <div>
+                <p className="font-mono text-[8px] uppercase tracking-[0.36em] text-[#8e8e9a]">profile</p>
+                <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.28em] text-[#f7f7fa]">
+                  {currentUser.username}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-mono text-[8px] uppercase tracking-[0.36em] text-[#8e8e9a]">status</p>
-              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.28em] text-[#f7f7fa]">
-                private
-              </p>
-            </div>
+            <button
+              className="border border-[#3a3a46] bg-[#09090c] px-3 py-3 font-mono text-[9px] uppercase tracking-[0.28em] text-[#a9a9b4] transition hover:border-[#555560] hover:text-[#f7f7fa]"
+              onClick={handleLogout}
+              type="button"
+            >
+              log out
+            </button>
           </div>
         </header>
 
@@ -420,9 +451,9 @@ export default function PersonalMapPage() {
             ) : null}
 
             <div className="grid gap-3 sm:grid-cols-3">
-              <MetricCard label="signals" value={signals.length} />
+              <MetricCard label="uploaded signals" value={personalSignals.length} />
               <MetricCard label="places" value={uniquePlaces} />
-              <MetricCard label="last active" value={explorerProfile.lastSignalAt} />
+              <MetricCard label="last active" value={lastSignalAt} />
             </div>
           </section>
 
@@ -430,7 +461,7 @@ export default function PersonalMapPage() {
             <div className="border border-[#2b2b34] bg-[#09090c] p-4">
               <p className="font-mono text-[8px] uppercase tracking-[0.42em] text-[#8e8e9a]">personal signals</p>
               <div className="mt-4 space-y-3">
-                {recentSignals.map((signal, index) => (
+                {recentSignals.length > 0 ? recentSignals.map((signal, index) => (
                   <button
                     className="block w-full border border-[#23232a] bg-[#060608] px-3 py-2 text-left transition hover:border-[#3b3b46] hover:bg-[#0c0c10]"
                     key={signal.id}
@@ -458,7 +489,11 @@ export default function PersonalMapPage() {
                       {signal.city} / {signal.area}
                     </p>
                   </button>
-                ))}
+                )) : (
+                  <div className="border border-[#23232a] bg-[#060608] px-3 py-3 text-xs leading-6 text-[#8e8e9a]">
+                    还没有属于 {currentUser.username} 的上传信号。
+                  </div>
+                )}
               </div>
             </div>
 
@@ -508,7 +543,7 @@ export default function PersonalMapPage() {
         <footer className="mt-4 border-t border-[#26262f] pt-4">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <MiniList title="favorites" value="ARCHIVE / NEON / NIGHT" />
-            <MiniList title="saved places" value="3 HIDDEN STOPS" />
+            <MiniList title="saved places" value={`${uniquePlaces} HIDDEN STOPS`} />
             <MiniList title="scope" value="PRIVATE TRACE" />
             <MiniList title="mode" value="PIXEL GRID" />
           </div>

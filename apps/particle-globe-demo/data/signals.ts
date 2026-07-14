@@ -5,6 +5,8 @@ export type Signal = {
   area: string;
   time: string;
   mood: string;
+  authorId: string;
+  authorName: string;
   emotionTags?: string[];
   story: string;
   lat: number;
@@ -36,6 +38,8 @@ export const signals: Signal[] = [
     area: "Shibuya Backstreet",
     time: "02:17 AM",
     mood: "lonely / electric",
+    authorId: "zita-voidwalker",
+    authorName: "Zita",
     lat: 35.6595,
     lng: 139.7005,
     mediaKind: "photo",
@@ -52,6 +56,8 @@ export const signals: Signal[] = [
     area: "Nakameguro",
     time: "01:04 AM",
     mood: "warm / hidden",
+    authorId: "mika-nightline",
+    authorName: "Mika",
     lat: 35.6444,
     lng: 139.6992,
     mediaKind: "video",
@@ -69,6 +75,8 @@ export const signals: Signal[] = [
     area: "Hengshan Road",
     time: "11:42 PM",
     mood: "nostalgic / blue",
+    authorId: "lin-archive",
+    authorName: "Lin",
     lat: 31.2046,
     lng: 121.4465,
     mediaKind: "photo",
@@ -85,6 +93,8 @@ export const signals: Signal[] = [
     area: "Euljiro",
     time: "00:36 AM",
     mood: "open / unreal",
+    authorId: "zita-voidwalker",
+    authorName: "Zita",
     lat: 37.5665,
     lng: 126.991,
     mediaKind: "video",
@@ -102,6 +112,8 @@ export const signals: Signal[] = [
     area: "Mong Kok Backstreet",
     time: "02:43 AM",
     mood: "strange / neon",
+    authorId: "kei-backstreet",
+    authorName: "Kei",
     lat: 22.3193,
     lng: 114.1694,
     mediaKind: "photo",

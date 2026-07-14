@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import type { ExplorerProfile, Signal } from "@/data/signals";
+import type { VoidMapUser } from "@/lib/auth";
 import { ParticleGlobe } from "./ParticleGlobe";
 import { VoidCTA } from "./VoidCTA";
 import { CONTINENTS, type ContinentId } from "./continent-data";
@@ -29,10 +30,11 @@ type SplashPhase = "intro" | "fragments" | "tunnel" | "reveal" | "done";
 type HeroSceneProps = {
   signals: Signal[];
   profile: ExplorerProfile;
+  currentUser: VoidMapUser;
   initialSignalId?: string;
 };
 
-export function HeroScene({ signals, profile, initialSignalId }: HeroSceneProps) {
+export function HeroScene({ signals, profile, currentUser, initialSignalId }: HeroSceneProps) {
   const shouldReduceMotion = useReducedMotion();
   const isCompact = useIsCompactViewport();
   const didPlaySplash = useRef(false);
@@ -138,6 +140,8 @@ export function HeroScene({ signals, profile, initialSignalId }: HeroSceneProps)
       area: composerLocationName ? "Current location" : anchorSignal?.area ?? "Personal trace",
       time,
       mood,
+      authorId: currentUser.id,
+      authorName: currentUser.username,
       emotionTags: moodTags,
       story: composerDescription || "No description added yet.",
       lat: latLng.lat,
@@ -795,6 +799,9 @@ function SignalPreviewCard({ signal, onClose }: { signal: Signal; onClose: () =>
         <div>
           <p className="text-[9px] uppercase tracking-[0.28em] text-[var(--vm-text-muted)]">Description</p>
           <p className="mt-2 text-xs leading-6 text-[var(--vm-text-secondary)]">{signal.story}</p>
+          <p className="mt-3 inline-flex rounded-full border border-[rgba(var(--vm-user-color-rgb),0.18)] bg-[rgba(var(--vm-user-color-rgb),0.06)] px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.22em] text-[var(--vm-user-color)]">
+            uploaded by {signal.authorName}
+          </p>
         </div>
 
         <div className="grid gap-2 text-xs text-[var(--vm-text-secondary)]">
